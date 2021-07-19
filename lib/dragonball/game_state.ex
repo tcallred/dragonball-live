@@ -71,30 +71,33 @@ defmodule Dragonball.GameState do
       :kamehameha ->
         %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
 
-        cond do
-          target_move_type in [:charge, :super_saiyan] -> target
-          target_move_type == :reflect -> player_id
+        case target_move_type do
+          mt when mt in [:charge, :super_saiyan] ->
+            target
+
+          :reflect ->
+            player_id
         end
 
       :disk ->
         %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
 
-        cond do
-          target_move_type in [:charge, :kamehameha, :super_saiyan] ->
+        case target_move_type do
+          mt when mt in [:charge, :kamehameha, :super_saiyan] ->
             target
 
-          target_move_type == :reflect ->
+          :reflect ->
             player_id
         end
 
       :special_beam ->
         %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
 
-        cond do
-          target_move_type in [:charge, :block, :kamehameha, :disk, :super_saiyan] ->
+        case target_move_type do
+          mt when mt in [:charge, :block, :kamehameha, :disk, :super_saiyan] ->
             target
 
-          target_move_type == :reflect ->
+          :reflect ->
             player_id
         end
     end
