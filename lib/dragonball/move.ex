@@ -29,14 +29,14 @@ defmodule Dragonball.Move do
 
   def cost_of(%__MODULE__{move_type: move_type}) do
     case move_type do
-      :charge       -> 0
-      :block        -> 0
-      :kamehameha   -> 1
-      :disk         -> 2
+      :charge -> 0
+      :block -> 0
+      :kamehameha -> 1
+      :disk -> 2
       :super_saiyan -> 3
-      :reflect      -> 4
+      :reflect -> 4
       :special_beam -> 5
-      :spirt_bomb   -> 10
+      :spirt_bomb -> 10
     end
   end
 end

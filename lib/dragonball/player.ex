@@ -1,7 +1,7 @@
 defmodule Dragonball.Player do
   alias Dragonball.Move
   alias __MODULE__
-  
+
   defstruct id: "",
             name: "",
             charges: 0,
@@ -10,11 +10,11 @@ defmodule Dragonball.Player do
   @type id_type :: String.t()
 
   @type t :: %Player{
-    id: id_type(),
-    name: String.t(),
-    charges: Integer.t(),
-    state: :alive | :super | :dead
-  }
+          id: id_type(),
+          name: String.t(),
+          charges: Integer.t(),
+          state: :alive | :super | :dead
+        }
 
   def new(name) do
     # TODO Make an id
@@ -29,6 +29,7 @@ defmodule Dragonball.Player do
     case state do
       :alive ->
         %Player{player | state: :dead, charges: 0}
+
       :super ->
         # TODO Should charges go down to 0?
         %Player{player | state: :alive, charges: 0}
@@ -57,10 +58,12 @@ defmodule Dragonball.Player do
   end
 
   defp charge(%Player{charges: charges, state: state} = player) do
-    increment = case state do
-      :alive -> 1
-      :super -> 2
-    end
+    increment =
+      case state do
+        :alive -> 1
+        :super -> 2
+      end
+
     %Player{player | charges: charges + increment}
   end
 end
