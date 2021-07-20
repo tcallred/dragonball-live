@@ -33,12 +33,13 @@ defmodule Dragonball.GameState do
 
   @spec process_round(t, round_moves :: round_moves()) :: t
   def process_round(state, round_moves) do
+    # TODO Search for multiple spirit bombs
     spirit_bomb = Enum.find(round_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
 
     players_to_kill =
       if spirit_bomb do
         round_moves
-        |> Enum.map(fn {player_id, _} -> player_id end)
+        |> Map.keys()
         |> Enum.filter(&(&1 != elem(spirit_bomb, 0)))
       else
         round_moves
@@ -53,9 +54,9 @@ defmodule Dragonball.GameState do
 
     still_alive = Enum.filter(players, &Player.is_alive?/1)
 
-    winner = if Enum.count(still_alive) == 1, do: Enum.at(still_alive, 0)
+    winner = if Enum.count(still_alive) == 1, do: Enum.at(still_alive, 0).id
 
-    next_status = if winner, do: :done, else: state.status
+    next_status = if winner || Enum.count(still_alive) == 0, do: :done, else: state.status
 
     %GameState{
       state
@@ -69,37 +70,67 @@ defmodule Dragonball.GameState do
   defp player_killed_by({player_id, %Move{move_type: move_type, target: target}}, round_moves) do
     case move_type do
       :kamehameha ->
-        %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
+        %Move{
+          move_type: target_move_type,
+          target: targets_target
+        } = Map.fetch!(round_moves, target)
 
         case target_move_type do
-          mt when mt in [:charge, :super_saiyan] ->
-            target
+          :kamehameha when targets_target == player_id ->
+            nil
 
-          :reflect ->
-            player_id
-        end
-
-      :disk ->
-        %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
-
-        case target_move_type do
           mt when mt in [:charge, :kamehameha, :super_saiyan] ->
             target
 
           :reflect ->
             player_id
+
+          _ ->
+            nil
         end
 
-      :special_beam ->
-        %Move{move_type: target_move_type} = Map.fetch!(round_moves, target)
+      :disk ->
+        %Move{
+          move_type: target_move_type,
+          target: targets_target
+        } = Map.fetch!(round_moves, target)
 
         case target_move_type do
-          mt when mt in [:charge, :block, :kamehameha, :disk, :super_saiyan] ->
+          :disk when targets_target == player_id ->
+            nil
+
+          mt when mt in [:charge, :kamehameha, :disk, :super_saiyan] ->
             target
 
           :reflect ->
             player_id
+
+          _ ->
+            nil
         end
+
+      :special_beam ->
+        %Move{
+          move_type: target_move_type,
+          target: targets_target
+        } = Map.fetch!(round_moves, target)
+
+        case target_move_type do
+          :special_beam when targets_target == player_id ->
+            nil
+
+          mt when mt in [:charge, :block, :kamehameha, :disk, :super_saiyan, :special_beam] ->
+            target
+
+          :reflect ->
+            player_id
+
+          _ ->
+            nil
+        end
+
+      _ ->
+        nil
     end
   end
 

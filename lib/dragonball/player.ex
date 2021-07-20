@@ -31,8 +31,7 @@ defmodule Dragonball.Player do
         %Player{player | state: :dead, charges: 0}
 
       :super ->
-        # TODO Should charges go down to 0?
-        %Player{player | state: :alive, charges: 0}
+        %Player{player | state: :alive}
     end
   end
 
