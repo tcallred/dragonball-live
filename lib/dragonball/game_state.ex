@@ -33,18 +33,23 @@ defmodule Dragonball.GameState do
 
   @spec process_round(t, round_moves :: round_moves()) :: t
   def process_round(state, round_moves) do
-    # TODO Search for multiple spirit bombs
-    spirit_bomb = Enum.find(round_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
+    spirit_bombs =
+      Enum.filter(round_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
+      |> Enum.map(fn {id, _} -> id end)
 
     players_to_kill =
-      if spirit_bomb do
-        round_moves
-        |> Map.keys()
-        |> Enum.filter(&(&1 != elem(spirit_bomb, 0)))
-      else
-        round_moves
-        |> Enum.map(&player_killed_by(&1, round_moves))
-        |> Enum.reject(&is_nil/1)
+      cond do
+        Enum.count(spirit_bombs) > 1 ->
+          Enum.map(state.players, & &1.id)
+
+        Enum.count(spirit_bombs) == 1 ->
+          Enum.map(state.players, & &1.id)
+          |> Enum.filter(&(&1 not in spirit_bombs))
+
+        true ->
+          round_moves
+          |> Enum.map(&player_killed_by(&1, round_moves))
+          |> Enum.reject(&is_nil/1)
       end
 
     players =

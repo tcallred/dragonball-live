@@ -245,4 +245,108 @@ defmodule Dragonball.GameStateTest do
 
     assert GameState.process_round(game, round_moves) == game_after_process
   end
+
+  test "four players, one spirit bombs to win" do
+    john = %Player{
+      name: "John",
+      id: "1",
+      charges: 10,
+      state: :alive
+    }
+    mark = %Player{
+      name: "Mark",
+      id: "2",
+      charges: 2,
+      state: :alive
+    }
+    paul = %Player{
+      name: "Paul",
+      id: "3",
+      charges: 2
+    }
+    rosa = %Player{
+      name: "Rosa",
+      id: "4",
+      charges: 4
+    }
+
+    game = %GameState{
+      status: :playing,
+      players: [john, mark, paul, rosa],
+      moves_played: [],
+    }
+
+    round_moves = %{
+      john.id => Move.new(:spirit_bomb),
+      mark.id => Move.new(:kamehameha, paul.id),
+      paul.id => Move.new(:kamehameha, rosa.id),
+      rosa.id => Move.new(:kamehameha, john.id),
+    }
+
+    game_after_process = %GameState{
+      status: :done,
+      players: [
+        %Player{john | charges: 0},
+        %Player{mark | charges: 0, state: :dead},
+        %Player{paul | charges: 0, state: :dead},
+        %Player{rosa | charges: 0, state: :dead},
+      ],
+      moves_played: [round_moves],
+      winner: john.id
+    }
+
+    assert GameState.process_round(game, round_moves) == game_after_process
+  end
+
+  test "four players, two spirit bombs, everyone's dead, no winner" do
+    john = %Player{
+      name: "John",
+      id: "1",
+      charges: 10,
+      state: :alive
+    }
+    mark = %Player{
+      name: "Mark",
+      id: "2",
+      charges: 10,
+      state: :alive
+    }
+    paul = %Player{
+      name: "Paul",
+      id: "3",
+      charges: 2
+    }
+    rosa = %Player{
+      name: "Rosa",
+      id: "4",
+      charges: 4
+    }
+
+    game = %GameState{
+      status: :playing,
+      players: [john, mark, paul, rosa],
+      moves_played: [],
+    }
+
+    round_moves = %{
+      john.id => Move.new(:spirit_bomb),
+      mark.id => Move.new(:spirit_bomb),
+      paul.id => Move.new(:kamehameha, rosa.id),
+      rosa.id => Move.new(:kamehameha, john.id),
+    }
+
+    game_after_process = %GameState{
+      status: :done,
+      players: [
+        %Player{john | charges: 0, state: :dead},
+        %Player{mark | charges: 0, state: :dead},
+        %Player{paul | charges: 0, state: :dead},
+        %Player{rosa | charges: 0, state: :dead},
+      ],
+      moves_played: [round_moves],
+      winner: nil
+    }
+
+    assert GameState.process_round(game, round_moves) == game_after_process
+  end
 end

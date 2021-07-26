@@ -36,7 +36,7 @@ defmodule Dragonball.Move do
       :super_saiyan -> 3
       :reflect -> 4
       :special_beam -> 5
-      :spirt_bomb -> 10
+      :spirit_bomb -> 10
     end
   end
 end
