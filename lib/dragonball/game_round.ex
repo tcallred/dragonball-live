@@ -8,8 +8,6 @@ defmodule Dragonball.GameRound do
             previous_turns: [],
             winner: nil
 
-  @type game_code :: String.t()
-
   @type turn_moves :: %{Player.id_type() => Move.t()}
 
   @type t :: %GameRound{
@@ -19,11 +17,11 @@ defmodule Dragonball.GameRound do
           winner: nil | Player.id_type()
         }
 
-  def add_player(round, player) do
-    %GameRound{round | players: [player | round.players]}
+  def new(players) do
+    %GameRound{players: players}
   end
 
-  @spec process_turn(t, turn_moves :: turn_moves()) :: t
+  @spec process_turn(t(), turn_moves :: turn_moves()) :: t()
   def process_turn(round, turn_moves) do
     spirit_bombs =
       Enum.filter(turn_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
