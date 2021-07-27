@@ -1,38 +1,30 @@
-defmodule Dragonball.GameState do
+defmodule Dragonball.GameRound do
   alias Dragonball.Player
   alias Dragonball.Move
   alias __MODULE__
 
-  defstruct code: nil,
-            status: :setup,
+  defstruct status: :playing,
             players: [],
-            connected_players: [],
-            moves_played: [],
+            previous_turns: [],
             winner: nil
 
   @type game_code :: String.t()
 
   @type turn_moves :: %{Player.id_type() => Move.t()}
 
-  @type t :: %GameState{
-          code: nil | game_code(),
-          status: :setup | :playing | :done,
+  @type t :: %GameRound{
+          status: :playing | :done,
           players: [Player.t()],
-          connected_players: [Player.id_type()],
-          moves_played: [turn_moves()],
+          previous_turns: [turn_moves()],
           winner: nil | Player.id_type()
         }
 
-  def start_game(state) do
-    %GameState{state | status: :playing}
-  end
-
-  def add_player(state, player) do
-    %GameState{state | players: [player | state.players]}
+  def add_player(round, player) do
+    %GameRound{round | players: [player | round.players]}
   end
 
   @spec process_turn(t, turn_moves :: turn_moves()) :: t
-  def process_turn(state, turn_moves) do
+  def process_turn(round, turn_moves) do
     spirit_bombs =
       Enum.filter(turn_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
       |> Enum.map(fn {id, _} -> id end)
@@ -40,10 +32,10 @@ defmodule Dragonball.GameState do
     players_to_kill =
       cond do
         Enum.count(spirit_bombs) > 1 ->
-          Enum.map(state.players, & &1.id)
+          Enum.map(round.players, & &1.id)
 
         Enum.count(spirit_bombs) == 1 ->
-          Enum.map(state.players, & &1.id)
+          Enum.map(round.players, & &1.id)
           |> Enum.filter(&(&1 not in spirit_bombs))
 
         true ->
@@ -53,7 +45,7 @@ defmodule Dragonball.GameState do
       end
 
     players =
-      state.players
+      round.players
       |> Enum.map(&kill_player(&1, players_to_kill))
       |> Enum.map(&complete_player_move(&1, turn_moves))
 
@@ -61,12 +53,12 @@ defmodule Dragonball.GameState do
 
     winner = if Enum.count(still_alive) == 1, do: Enum.at(still_alive, 0).id
 
-    next_status = if winner || Enum.count(still_alive) == 0, do: :done, else: state.status
+    next_status = if winner || Enum.count(still_alive) == 0, do: :done, else: round.status
 
-    %GameState{
-      state
+    %GameRound{
+      round
       | players: players,
-        moves_played: [turn_moves | state.moves_played],
+        previous_turns: [turn_moves | round.previous_turns],
         winner: winner,
         status: next_status
     }

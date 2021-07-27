@@ -1,6 +1,6 @@
-defmodule Dragonball.GameStateTest do
+defmodule Dragonball.GameRoundTest do
   use ExUnit.Case, async: true
-  alias Dragonball.GameState
+  alias Dragonball.GameRound
   alias Dragonball.Player
   alias Dragonball.Move
 
@@ -18,10 +18,10 @@ defmodule Dragonball.GameStateTest do
       state: :alive
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -29,17 +29,17 @@ defmodule Dragonball.GameStateTest do
       mark.id => Move.new(:charge)
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0},
         %Player{mark | charges: 0, state: :dead},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: john.id
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "two players, one blocks kamehameha" do
@@ -56,10 +56,10 @@ defmodule Dragonball.GameStateTest do
       state: :alive
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -67,16 +67,16 @@ defmodule Dragonball.GameStateTest do
       mark.id => Move.new(:block)
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :playing,
       players: [
         %Player{john | charges: 0},
         mark,
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "two players, disk beats kamehameha" do
@@ -93,10 +93,10 @@ defmodule Dragonball.GameStateTest do
       state: :alive
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -104,17 +104,17 @@ defmodule Dragonball.GameStateTest do
       mark.id => Move.new(:disk, john.id)
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0, state: :dead},
         %Player{mark | charges: 0},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: mark.id
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
 
@@ -132,10 +132,10 @@ defmodule Dragonball.GameStateTest do
       state: :alive
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -143,17 +143,17 @@ defmodule Dragonball.GameStateTest do
       mark.id => Move.new(:disk, john.id)
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0},
         %Player{mark | charges: 0, state: :dead},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: john.id
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "two players, reflect kills attacker" do
@@ -170,10 +170,10 @@ defmodule Dragonball.GameStateTest do
       state: :alive
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -181,17 +181,17 @@ defmodule Dragonball.GameStateTest do
       mark.id => Move.new(:reflect)
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0, state: :dead},
         %Player{mark | charges: 1},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: mark.id
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "four players, all kill each other" do
@@ -218,10 +218,10 @@ defmodule Dragonball.GameStateTest do
       charges: 4
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark, paul, rosa],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -231,7 +231,7 @@ defmodule Dragonball.GameStateTest do
       rosa.id => Move.new(:kamehameha, john.id),
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0, state: :dead},
@@ -239,11 +239,11 @@ defmodule Dragonball.GameStateTest do
         %Player{paul | charges: 0, state: :dead},
         %Player{rosa | charges: 0, state: :dead},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: nil # No winner b/c all dead
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "four players, one spirit bombs to win" do
@@ -270,10 +270,10 @@ defmodule Dragonball.GameStateTest do
       charges: 4
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark, paul, rosa],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -283,7 +283,7 @@ defmodule Dragonball.GameStateTest do
       rosa.id => Move.new(:kamehameha, john.id),
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0},
@@ -291,11 +291,11 @@ defmodule Dragonball.GameStateTest do
         %Player{paul | charges: 0, state: :dead},
         %Player{rosa | charges: 0, state: :dead},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: john.id
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 
   test "four players, two spirit bombs, everyone's dead, no winner" do
@@ -322,10 +322,10 @@ defmodule Dragonball.GameStateTest do
       charges: 4
     }
 
-    game = %GameState{
+    round = %GameRound{
       status: :playing,
       players: [john, mark, paul, rosa],
-      moves_played: [],
+      previous_turns: [],
     }
 
     turn_moves = %{
@@ -335,7 +335,7 @@ defmodule Dragonball.GameStateTest do
       rosa.id => Move.new(:kamehameha, john.id),
     }
 
-    game_after_process = %GameState{
+    round_after_process = %GameRound{
       status: :done,
       players: [
         %Player{john | charges: 0, state: :dead},
@@ -343,10 +343,10 @@ defmodule Dragonball.GameStateTest do
         %Player{paul | charges: 0, state: :dead},
         %Player{rosa | charges: 0, state: :dead},
       ],
-      moves_played: [turn_moves],
+      previous_turns: [turn_moves],
       winner: nil
     }
 
-    assert GameState.process_turn(game, turn_moves) == game_after_process
+    assert GameRound.process_turn(round, turn_moves) == round_after_process
   end
 end
