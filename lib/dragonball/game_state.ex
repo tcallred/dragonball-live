@@ -12,14 +12,14 @@ defmodule Dragonball.GameState do
 
   @type game_code :: String.t()
 
-  @type round_moves :: %{Player.id_type() => Move.t()}
+  @type turn_moves :: %{Player.id_type() => Move.t()}
 
   @type t :: %GameState{
           code: nil | game_code(),
           status: :setup | :playing | :done,
           players: [Player.t()],
           connected_players: [Player.id_type()],
-          moves_played: [round_moves()],
+          moves_played: [turn_moves()],
           winner: nil | Player.id_type()
         }
 
@@ -31,10 +31,10 @@ defmodule Dragonball.GameState do
     %GameState{state | players: [player | state.players]}
   end
 
-  @spec process_round(t, round_moves :: round_moves()) :: t
-  def process_round(state, round_moves) do
+  @spec process_turn(t, turn_moves :: turn_moves()) :: t
+  def process_turn(state, turn_moves) do
     spirit_bombs =
-      Enum.filter(round_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
+      Enum.filter(turn_moves, fn {_, move} -> move.move_type == :spirit_bomb end)
       |> Enum.map(fn {id, _} -> id end)
 
     players_to_kill =
@@ -47,15 +47,15 @@ defmodule Dragonball.GameState do
           |> Enum.filter(&(&1 not in spirit_bombs))
 
         true ->
-          round_moves
-          |> Enum.map(&player_killed_by(&1, round_moves))
+          turn_moves
+          |> Enum.map(&player_killed_by(&1, turn_moves))
           |> Enum.reject(&is_nil/1)
       end
 
     players =
       state.players
       |> Enum.map(&kill_player(&1, players_to_kill))
-      |> Enum.map(&complete_player_move(&1, round_moves))
+      |> Enum.map(&complete_player_move(&1, turn_moves))
 
     still_alive = Enum.filter(players, &Player.is_alive?/1)
 
@@ -66,19 +66,19 @@ defmodule Dragonball.GameState do
     %GameState{
       state
       | players: players,
-        moves_played: [round_moves | state.moves_played],
+        moves_played: [turn_moves | state.moves_played],
         winner: winner,
         status: next_status
     }
   end
 
-  defp player_killed_by({player_id, %Move{move_type: move_type, target: target}}, round_moves) do
+  defp player_killed_by({player_id, %Move{move_type: move_type, target: target}}, turn_moves) do
     case move_type do
       :kamehameha ->
         %Move{
           move_type: target_move_type,
           target: targets_target
-        } = Map.fetch!(round_moves, target)
+        } = Map.fetch!(turn_moves, target)
 
         case target_move_type do
           :kamehameha when targets_target == player_id ->
@@ -98,7 +98,7 @@ defmodule Dragonball.GameState do
         %Move{
           move_type: target_move_type,
           target: targets_target
-        } = Map.fetch!(round_moves, target)
+        } = Map.fetch!(turn_moves, target)
 
         case target_move_type do
           :disk when targets_target == player_id ->
@@ -118,7 +118,7 @@ defmodule Dragonball.GameState do
         %Move{
           move_type: target_move_type,
           target: targets_target
-        } = Map.fetch!(round_moves, target)
+        } = Map.fetch!(turn_moves, target)
 
         case target_move_type do
           :special_beam when targets_target == player_id ->
@@ -147,8 +147,8 @@ defmodule Dragonball.GameState do
     end
   end
 
-  defp complete_player_move(player, round_moves) do
-    move = Map.fetch!(round_moves, player.id)
+  defp complete_player_move(player, turn_moves) do
+    move = Map.fetch!(turn_moves, player.id)
 
     if Player.can_do_move?(player, move) do
       Player.move_completed(player, move)
