@@ -62,71 +62,49 @@ defmodule Dragonball.GameRound do
     }
   end
 
-  defp player_killed_by({player_id, %Move{move_type: move_type, target: target}}, turn_moves) do
-    case move_type do
-      :kamehameha ->
-        %Move{
-          move_type: target_move_type,
-          target: targets_target
-        } = Map.fetch!(turn_moves, target)
+  defp player_who_dies(player, _, _, :reflect, _) do
+    player
+  end
 
-        case target_move_type do
-          :kamehameha when targets_target == player_id ->
-            nil
-
-          mt when mt in [:charge, :kamehameha, :super_saiyan] ->
-            target
-
-          :reflect ->
-            player_id
-
-          _ ->
-            nil
-        end
-
-      :disk ->
-        %Move{
-          move_type: target_move_type,
-          target: targets_target
-        } = Map.fetch!(turn_moves, target)
-
-        case target_move_type do
-          :disk when targets_target == player_id ->
-            nil
-
-          mt when mt in [:charge, :kamehameha, :disk, :super_saiyan] ->
-            target
-
-          :reflect ->
-            player_id
-
-          _ ->
-            nil
-        end
-
-      :special_beam ->
-        %Move{
-          move_type: target_move_type,
-          target: targets_target
-        } = Map.fetch!(turn_moves, target)
-
-        case target_move_type do
-          :special_beam when targets_target == player_id ->
-            nil
-
-          mt when mt in [:charge, :block, :kamehameha, :disk, :super_saiyan, :special_beam] ->
-            target
-
-          :reflect ->
-            player_id
-
-          _ ->
-            nil
-        end
-
-      _ ->
-        nil
+  defp player_who_dies(player, attack, target, target_move, targets_target)
+       when targets_target == player do
+    if Move.move_priority(attack) > Move.move_priority(target_move) do
+      target
+    else
+      nil
     end
+  end
+
+  defp player_who_dies(_, :kamehameha, target, target_move, _)
+       when target_move not in [:block, :reflect] do
+    target
+  end
+
+  defp player_who_dies(_, :disk, target, target_move, _)
+       when target_move not in [:block, :reflect] do
+    target
+  end
+
+  defp player_who_dies(_, :special_beam, target, target_move, _)
+       when target_move not in [:reflect] do
+    target
+  end
+
+  defp player_who_dies(_, _, _, _, _) do
+    nil
+  end
+
+  defp player_killed_by({_, %Move{move_type: _mt, target: nil}}, _) do
+    nil
+  end
+
+  defp player_killed_by({player_id, %Move{move_type: move_type, target: target}}, turn_moves) do
+    %Move{
+      move_type: target_move_type,
+      target: targets_target
+    } = Map.fetch!(turn_moves, target)
+
+    player_who_dies(player_id, move_type, target, target_move_type, targets_target)
   end
 
   defp kill_player(player, players_to_kill) do

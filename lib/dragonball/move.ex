@@ -20,6 +20,7 @@ defmodule Dragonball.Move do
   defstruct move_type: :charge,
             target: nil
 
+
   def new(move_type, target \\ nil) do
     %Move{
       move_type: move_type,
@@ -37,6 +38,15 @@ defmodule Dragonball.Move do
       :reflect -> 4
       :special_beam -> 5
       :spirit_bomb -> 10
+    end
+  end
+
+  def move_priority(move_type) do
+    case move_type do
+      :kamehameha -> 1
+      :disk -> 2
+      :special_beam -> 3
+      _ -> 0
     end
   end
 end
